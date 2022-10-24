@@ -1,0 +1,40 @@
+image: jrei/systemd-ubuntu:20.04
+
+stages:
+  - build
+  - test
+  - upload
+
+variables:
+  NAME: "rootsh"
+  VERSION: "1.5.3"
+  PKGNAME: "${NAME}_${VERSION}"
+  PKGARCH: amd64
+  PKGDIR: "${PKGNAME}_${PKGARCH}"
+  PKGDEB: "${PKGDIR}.deb"
+
+cache: 
+  key: ${CI_PIPELINE_ID}
+  paths:
+    - package/
+  policy: pull-push
+
+before_script:
+  - ( apt -qq update && apt -qq install -y libc6 build-essential automake libtool libdbus-1-dev libglib2.0-dev libcurl3-dev libssl-dev libjson-glib-dev jq curl ) >/dev/null
+  - ( [ -d package ] || ( mkdir package ))
+  - chmod +x ./deb-pkg.sh
+
+build:
+  stage: build
+  script:
+    - ./deb-pkg.sh --build
+
+test:
+  stage: test
+  script:
+    - ./deb-pkg.sh --test
+
+upload:
+  stage: upload
+  script:
+    - ./deb-pkg.sh --upload
